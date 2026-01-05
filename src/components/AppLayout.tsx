@@ -1,46 +1,97 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { useLogs } from "../lib/useLogs";
+import nouticaLogo from "../assets/nouticaLogo.png";
 
 
 export default function AppLayout() {
-    const { logs } = useLogs();
-    const location = useLocation();
+  const { logs } = useLogs();
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  const pageTitle = useMemo(() => {
+    if (location.pathname === "/") return "Dashboard";
+    if (location.pathname === "/new") return "New Log";
+    if (location.pathname.endsWith("/edit")) return "Edit Log";
+    if (location.pathname === "/urdf") return "URDF Viewer";
+    if (location.pathname.startsWith("/logs/")) return "Log Detail";
+    return "Noutica";
+  }, [location.pathname]);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("noutica_theme");
+    const initial = saved === "light" ? "light" : "dark";
+    setTheme(initial);
+    document.body.dataset.theme = initial;
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.body.dataset.theme = next;
+    localStorage.setItem("noutica_theme", next);
+  };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh" }}>
-      <aside style={{ borderRight: "1px solid #333", padding: 16 }}>
-        <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>
-          <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 16 }}>Lab Notebook</div>
-        </Link>
+    <div className={`layout ${sidebarOpen ? "sidebar-open" : ""}`}>
+      <div
+        className="sidebar-overlay"
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <Link to="/" className="sidebar-title" onClick={() => setSidebarOpen(false)}>
+            <span className="brand">
+              <img src={nouticaLogo} alt="Noutica logo" className="brand-logo" />
+              Noutica
+            </span>
+          </Link>
+          <button
+            className="button sidebar-toggle"
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+          >
+            Close
+          </button>
+        </div>
 
-        <nav style={{ display: "grid", gap: 8 }}>
-          <NavLink to="/" end style={({ isActive }) => ({
-            padding: "10px 12px",
-            borderRadius: 10,
-            textDecoration: "none",
-            color: "inherit",
-            background: isActive ? "#2a2a2a" : "transparent",
-          })}>
+        <nav className="nav">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+            onClick={() => setSidebarOpen(false)}
+          >
             Dashboard
           </NavLink>
 
-          <NavLink to="/new" style={({ isActive }) => ({
-            padding: "10px 12px",
-            borderRadius: 10,
-            textDecoration: "none",
-            color: "inherit",
-            background: isActive ? "#2a2a2a" : "transparent",
-          })}>
+          <NavLink
+            to="/new"
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+            onClick={() => setSidebarOpen(false)}
+          >
             New Log
+          </NavLink>
+
+          <NavLink
+            to="/urdf"
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+            onClick={() => setSidebarOpen(false)}
+          >
+            URDF Viewer
           </NavLink>
         </nav>
 
-                <div style={{ marginTop: 18 }}>
-          <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
-            RECENT LOGS
-          </div>
+        <div className="recent-logs">
+          <div className="recent-logs-label">RECENT LOGS</div>
 
-          <div style={{ display: "grid", gap: 6, maxHeight: 360, overflowY: "auto" }}>
+          <div className="recent-logs-list">
             {logs.slice(0, 10).map((log) => {
               const active = location.pathname === `/logs/${log.id}`;
 
@@ -48,64 +99,46 @@ export default function AppLayout() {
                 <NavLink
                   key={log.id}
                   to={`/logs/${log.id}`}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 10,
-                    textDecoration: "none",
-                    color: "inherit",
-                    background: active ? "#2a2a2a" : "transparent",
-                  }}
+                  className={`recent-logs-item ${active ? "active" : ""}`}
+                  onClick={() => setSidebarOpen(false)}
                 >
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                    title={log.title}
-                  >
+                  <div className="recent-logs-title" title={log.title}>
                     {log.title}
                   </div>
-                  <div style={{ fontSize: 12, opacity: 0.65 }}>
-                    {log.createdAt.slice(0, 10)}
-                  </div>
+                  <div className="recent-logs-date">{log.createdAt.slice(0, 10)}</div>
                 </NavLink>
               );
             })}
 
-            {logs.length === 0 && (
-              <div style={{ fontSize: 13, opacity: 0.7 }}>
-                No logs yet.
-              </div>
-            )}
+            {logs.length === 0 && <div className="muted">No logs yet.</div>}
           </div>
         </div>
-
       </aside>
 
-      <div>
-        <header style={{
-          padding: "16px 20px",
-          borderBottom: "1px solid #333",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between"
-        }}>
-          <div style={{ fontWeight: 600 }}>Dashboard</div>
-          <Link to="/new" style={{
-            padding: "10px 12px",
-            borderRadius: 10,
-            background: "#3a3a3a",
-            color: "inherit",
-            textDecoration: "none"
-          }}>
-            + New log
-          </Link>
+      <div className="content">
+        <header className="header">
+          <div className="header-actions">
+            <button
+              className="button sidebar-toggle"
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open navigation"
+            >
+              Menu
+            </button>
+            <div className="header-title">{pageTitle}</div>
+          </div>
+          <div className="header-actions">
+            <button className="button ghost" type="button" onClick={toggleTheme}>
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </button>
+            <Link to="/new" className="button primary">
+              + New log
+            </Link>
+          </div>
         </header>
 
-        <main style={{ padding: 20 }}>
+        <main className="main">
           <Outlet />
         </main>
       </div>

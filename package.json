@@ -1,5 +1,5 @@
 {
-  "name": "lab-notebook",
+  "name": "noutica",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -16,7 +16,9 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.11.0",
     "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "three": "^0.160.1",
+    "urdf-loader": "^0.12.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

@@ -8,8 +8,8 @@ export function slugifyFilename(s: string) {
     .slice(0, 80) || "log";
 }
 
-export function downloadTextFile(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+export function downloadTextFile(filename: string, text: string, mimeType = "text/plain;charset=utf-8") {
+  const blob = new Blob([text], { type: mimeType });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");

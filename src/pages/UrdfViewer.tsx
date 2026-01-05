@@ -1,0 +1,163 @@
+import { useEffect, useMemo, useState } from "react";
+import UrdfCanvas from "../components/UrdfCanvas";
+
+const SAMPLE_URDF = `<?xml version="1.0"?>
+<robot name="auv" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- ============================= -->
+  <!-- Main Cube (AUV body) -->
+  <!-- ============================= -->
+  <link name="cube_link">
+    <visual>
+      <geometry><box size="1 1 1"/></geometry>
+      <material name="blue"><color rgba="0 0 1 1"/></material>
+    </visual>
+    <collision>
+      <geometry><box size="1 1 1"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="999.9"/>
+      <inertia ixx="166.6667" iyy="166.6667" izz="166.6667" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <!-- ============================= -->
+  <!-- Camera Link (small box) -->
+  <!-- ============================= -->
+  <link name="camera_link">
+    <visual>
+      <geometry><box size="0.1 0.1 0.1"/></geometry>
+      <material name="black"><color rgba="0 0 0 1"/></material>
+    </visual>
+    <collision>
+      <geometry><box size="0.1 0.1 0.1"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="8.333e-4" iyy="8.333e-4" izz="8.333e-4" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <!-- Mount the camera at the FRONT of the cube (x forward) -->
+  <joint name="camera_joint" type="fixed">
+    <parent link="cube_link"/>
+    <child link="camera_link"/>
+    <!-- Front face is at x=+0.5; place camera slightly in front of it -->
+    <origin xyz="0.55 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Optional: optical frame for ROS (z forward, x right, y down) -->
+  <link name="camera_optical_frame"/>
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_frame"/>
+    <!-- REP-103 rotation from x-forward,z-up to optical (z-forward,x-right,y-down) -->
+    <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679"/>
+  </joint>
+
+  <!-- ============================= -->
+  <!-- Camera Sensor definition -->
+  <!-- ============================= -->
+  <gazebo reference="camera_link">
+    <sensor name="camera_sensor" type="camera">
+      <pose>0 0 0 0 0 0</pose>
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <visualize>true</visualize>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov> <!-- ~60 deg -->
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip><near>0.1</near><far>100</far></clip>
+      </camera>
+      <!-- Gazebo Transport topic; bridge this to ROS -->
+      <topic>/cube/image_raw</topic>
+    </sensor>
+  </gazebo>
+
+  <!-- ============================= -->
+  <!-- Buoyancy Plugin -->
+  <!-- ============================= -->
+  <gazebo>
+    <plugin filename="libsimple_buoyancy.so" name="gz::sim::systems::SimpleBuoyancy">
+      <link_name>cube_link</link_name>
+      <water_level>0.0</water_level>
+      <fluid_density>1000.0</fluid_density>
+      <volume>1.0</volume>
+    </plugin>
+  </gazebo>
+
+  <!-- ============================= -->
+  <!-- Keyboard WASD Plugin -->
+  <!-- ============================= -->
+  <gazebo>
+    <plugin name="wasd_body_thrust_plugin" filename="libwasd_body_thrust_plugin.so">
+      <link_name>cube_link</link_name>
+      <topic>auve1/force_body</topic>
+      <lever>0 0 0</lever>
+      <hold_ms>-1</hold_ms>
+      <scale>1.0</scale>
+      <force_scale>1.0</force_scale>
+      <torque_scale>1.0</torque_scale>
+    </plugin>
+  </gazebo>
+
+  <!-- ============================= -->
+  <!-- Spawn below the water surface -->
+  <!-- ============================= -->
+  <gazebo reference="cube_link">
+    <pose>0 0 -1.0 0 0 0</pose>
+  </gazebo>
+
+</robot>
+`;
+
+export default function UrdfViewer() {
+  const seedKey = "urdf_viewer_seed_v1";
+  const [draft, setDraft] = useState(() => sessionStorage.getItem(seedKey) || SAMPLE_URDF);
+  const [urdfText, setUrdfText] = useState(() => sessionStorage.getItem(seedKey) || SAMPLE_URDF);
+  const [status, setStatus] = useState("Ready.");
+
+  const robotName = useMemo(() => {
+    const match = urdfText.match(/<robot\\s+name="([^"]+)"/);
+    return match?.[1] ?? "URDF";
+  }, [urdfText]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setUrdfText(draft);
+    }, 400);
+    return () => window.clearTimeout(handle);
+  }, [draft]);
+
+  return (
+    <div className="urdf-layout">
+      <div className="card urdf-panel">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <div style={{ fontWeight: 700 }}>URDF Editor</div>
+          <button className="button ghost" type="button" onClick={() => setDraft(SAMPLE_URDF)}>
+            Load example
+          </button>
+        </div>
+        <textarea
+          className="textarea"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={20}
+        />
+        <div className="muted">{status}</div>
+      </div>
+
+      <div className="card urdf-panel">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <div style={{ fontWeight: 700 }}>Viewer</div>
+          <div className="muted">{robotName}</div>
+        </div>
+        <UrdfCanvas urdfText={urdfText} onStatus={setStatus} minHeight={460} />
+      </div>
+    </div>
+  );
+}
