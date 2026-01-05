@@ -1,0 +1,29 @@
+/* Hard reset: remove all starter layout constraints */
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: block !important;
+  min-width: 0 !important;
+  min-height: 100% !important;
+  place-items: unset !important;
+  place-content: unset !important;
+  align-items: unset !important;
+  justify-content: unset !important;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: #1f1f1f;
+  color: #eaeaea;
+}
+
+#root {
+  width: 100% !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+}
