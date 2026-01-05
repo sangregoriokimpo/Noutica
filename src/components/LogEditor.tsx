@@ -6,6 +6,16 @@ export type LogEditorValue = {
   project: string;
   tagsText: string;
   body: string;
+  attachments: EditorAttachment[];
+};
+
+export type EditorAttachment = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+  createdAt: string;
 };
 
 type LogEditorProps = {
@@ -19,6 +29,7 @@ type LogEditorProps = {
 };
 
 type ViewMode = "edit" | "split" | "preview";
+type LogEditorTextField = "title" | "project" | "tagsText" | "body";
 
 export default function LogEditor({
   value,
@@ -31,11 +42,34 @@ export default function LogEditor({
 }: LogEditorProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("edit");
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const markdownBody = useMemo(() => value.body || "_(empty)_", [value.body]);
 
-  const setField = (field: keyof LogEditorValue, next: string) => {
+  const setField = (field: LogEditorTextField, next: string) => {
     onChange({ ...value, [field]: next });
+  };
+
+  const updateAttachments = (next: EditorAttachment[]) => {
+    onChange({ ...value, attachments: next });
+  };
+
+  const handleAddAttachments = async (files: FileList | null) => {
+    if (!files) return;
+    const parsed = await Promise.all(Array.from(files).map(fileToAttachment));
+    updateAttachments([...(value.attachments || []), ...parsed]);
+  };
+
+  const removeAttachment = (id: string) => {
+    updateAttachments(value.attachments.filter((item) => item.id !== id));
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    if (event.dataTransfer.files.length > 0) {
+      handleAddAttachments(event.dataTransfer.files);
+    }
   };
 
   const applyWrap = (before: string, after: string, fallback = "") => {
@@ -179,6 +213,47 @@ export default function LogEditor({
         )}
       </div>
 
+      <div
+        className={`dropzone ${isDragging ? "active" : ""}`}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+        style={{ display: "grid", gap: 10 }}
+      >
+        <div style={{ fontWeight: 600 }}>Attachments</div>
+        <input
+          type="file"
+          multiple
+          onChange={(e) => handleAddAttachments(e.currentTarget.files)}
+        />
+        {value.attachments.length === 0 ? (
+          <div className="muted">No attachments yet. Stored in local storage.</div>
+        ) : (
+          <div style={{ display: "grid", gap: 8 }}>
+            {value.attachments.map((item) => (
+              <div
+                key={item.id}
+                className="card"
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}
+              >
+                <div>
+                  <div style={{ fontWeight: 600 }}>{item.name}</div>
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    {formatBytes(item.size)} · {item.type || "unknown"}
+                  </div>
+                </div>
+                <button className="button danger" type="button" onClick={() => removeAttachment(item.id)}>
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <button className="button" type="button" onClick={onCancel}>
           Cancel
@@ -222,4 +297,37 @@ function insertAtCursor(
   el.focus();
   el.setSelectionRange(cursorPos, cursorPos);
   return newValue;
+}
+
+function fileToAttachment(file: File): Promise<EditorAttachment> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({
+        id: getRandomId(),
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl: String(reader.result),
+        createdAt: new Date().toISOString(),
+      });
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatBytes(bytes: number) {
+  const units = ["B", "KB", "MB", "GB"];
+  if (bytes === 0) return "0 B";
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / Math.pow(1024, i);
+  return `${value.toFixed(value >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+function getRandomId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
 }

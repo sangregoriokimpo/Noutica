@@ -7,6 +7,7 @@ function escapeYaml(s: string) {
 export function logToMarkdown(log: LogEntry): string {
   const tags = log.tags ?? [];
   const created = new Date(log.createdAt).toISOString();
+  const attachments = log.attachments ?? [];
 
   const frontmatter =
 `---
@@ -25,6 +26,7 @@ tags: [${tags.map(t => `"${escapeYaml(t)}"`).join(", ")}]
 
 ${log.project ? `**Project:** ${log.project}\n` : ""}**Created:** ${created}
 ${tags.length ? `**Tags:** ${tags.join(", ")}\n` : ""}
+${attachments.length ? `**Attachments:** ${attachments.map((item) => item.name).join(", ")}\n` : ""}
 
 ---
 

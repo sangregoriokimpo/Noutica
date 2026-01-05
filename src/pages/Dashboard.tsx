@@ -201,6 +201,22 @@ export default function Dashboard() {
                     ))}
                   </div>
                 )}
+
+                {(log.attachments ?? []).length > 0 && (
+                  <div className="attachment-row" style={{ marginTop: 8 }}>
+                    {(log.attachments ?? [])
+                      .filter((item) => (item.type || "").startsWith("image/"))
+                      .slice(0, 4)
+                      .map((item) => (
+                        <img
+                          key={item.id}
+                          src={item.dataUrl}
+                          alt={item.name}
+                          className="attachment-thumb"
+                        />
+                      ))}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -252,6 +268,9 @@ function normalizeImportedLogs(raw: unknown): LogEntry[] {
         project: typeof data.project === "string" ? data.project : undefined,
         tags: Array.isArray(data.tags) ? data.tags.filter(Boolean) : [],
         body: typeof data.body === "string" ? data.body : "",
+        attachments: Array.isArray(data.attachments)
+          ? data.attachments.filter((item) => item && typeof item === "object")
+          : [],
         createdAt: typeof data.createdAt === "string" ? data.createdAt : now,
       } satisfies LogEntry;
     })

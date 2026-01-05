@@ -6,25 +6,27 @@ import { getLog, updateLog } from "../lib/logStorage";
 export default function EditLog() {
   const { id } = useParams();
   const nav = useNavigate();
-  const log = id ? getLog(id) : undefined;
+  const log = useMemo(() => (id ? getLog(id) : undefined), [id]);
 
   const initialValue = useMemo<LogEditorValue>(() => {
     if (!log) {
-      return { title: "", project: "", tagsText: "", body: "" };
+      return { title: "", project: "", tagsText: "", body: "", attachments: [] };
     }
     return {
       title: log.title,
       project: log.project ?? "",
       tagsText: log.tags.join(", "),
       body: log.body,
+      attachments: log.attachments ?? [],
     };
   }, [log]);
 
   const [value, setValue] = useState<LogEditorValue>(initialValue);
 
   useEffect(() => {
+    if (!log) return;
     setValue(initialValue);
-  }, [initialValue]);
+  }, [log?.id, initialValue]);
 
   if (!log) {
     return (
@@ -50,6 +52,7 @@ export default function EditLog() {
         .map((t) => t.trim())
         .filter(Boolean),
       body: value.body.trim(),
+      attachments: value.attachments,
     });
     nav(`/logs/${log.id}`);
   };

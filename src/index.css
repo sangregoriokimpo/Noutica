@@ -399,6 +399,95 @@ body[data-theme="light"] .brand-logo {
   background: #141414;
 }
 
+.palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: start center;
+  padding-top: 12vh;
+  z-index: 50;
+}
+
+.palette {
+  width: min(520px, 92vw);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.palette-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: inherit;
+  font-family: inherit;
+}
+
+.palette-list {
+  display: grid;
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.palette-item {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.palette-item:hover {
+  background: var(--bg-elev);
+  border-color: var(--border);
+}
+
+.palette-item.active {
+  background: var(--bg-elev);
+  border-color: var(--border);
+}
+
+.dropzone {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.dropzone.active {
+  border-color: var(--accent);
+  background: rgba(122, 162, 247, 0.08);
+}
+
+body[data-theme="light"] .dropzone.active {
+  background: rgba(43, 107, 246, 0.08);
+}
+
+.attachment-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.attachment-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
 .sidebar-overlay {
   display: none;
 }

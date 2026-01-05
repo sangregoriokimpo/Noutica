@@ -14,6 +14,7 @@ export default function LogDetail() {
   const log = id ? getLog(id) : undefined;
   const [urdfStatus, setUrdfStatus] = useState<string | undefined>(undefined);
   const urdfText = useMemo(() => (log?.body ? extractUrdf(log.body) : null), [log?.body]);
+  const attachments = log?.attachments ?? [];
 
   if (!log) {
     return (
@@ -82,6 +83,39 @@ export default function LogDetail() {
         <MarkdownRenderer markdown={log.body || "_(empty)_"} />
       </div>
 
+      {attachments.length > 0 && (
+        <div className="card">
+          <div style={{ fontWeight: 700, marginBottom: 10 }}>Attachments</div>
+          <div style={{ display: "grid", gap: 10 }}>
+            {attachments.map((item) => (
+              <div
+                key={item.id}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {(item.type || "").startsWith("image/") && (
+                    <img
+                      src={item.dataUrl}
+                      alt={item.name}
+                      style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 10, border: "1px solid var(--border)" }}
+                    />
+                  )}
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{item.name}</div>
+                    <div className="muted" style={{ fontSize: 12 }}>
+                      {formatBytes(item.size)} · {item.type || "unknown"}
+                    </div>
+                  </div>
+                </div>
+                <a className="button ghost" href={item.dataUrl} download={item.name}>
+                  Download
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {urdfText && (
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
@@ -123,4 +157,12 @@ function extractUrdf(markdown: string): string | null {
 
   const inlineMatch = markdown.match(/<robot[\s\S]*?<\/robot>/i);
   return inlineMatch ? inlineMatch[0].trim() : null;
+}
+
+function formatBytes(bytes: number) {
+  const units = ["B", "KB", "MB", "GB"];
+  if (bytes === 0) return "0 B";
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / Math.pow(1024, i);
+  return `${value.toFixed(value >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
 }

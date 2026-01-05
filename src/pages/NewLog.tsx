@@ -16,6 +16,7 @@ export default function NewLog() {
     project: "",
     tagsText: "",
     body: "",
+    attachments: [],
   });
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function NewLog() {
         project: parsed.project || "",
         tagsText: parsed.tagsText || "",
         body: parsed.body || "",
+        attachments: Array.isArray(parsed.attachments) ? parsed.attachments : [],
       });
       if (parsed.savedAt) {
         setDraftStatus(`Draft loaded (${new Date(parsed.savedAt).toLocaleTimeString()}).`);
@@ -69,6 +71,7 @@ export default function NewLog() {
       project: value.project.trim() || undefined,
       tags: parsedTags,
       body: value.body.trim(),
+      attachments: value.attachments,
     });
     localStorage.removeItem(DRAFT_KEY);
     nav("/");

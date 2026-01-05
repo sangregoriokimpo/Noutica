@@ -4,7 +4,17 @@ export type LogEntry = {
   project?: string;
   tags: string[];
   body: string;
+  attachments?: Attachment[];
   createdAt: string; 
+};
+
+export type Attachment = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+  createdAt: string;
 };
 
 const STORAGE_KEY = "lab_notebook_logs_v1";

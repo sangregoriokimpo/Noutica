@@ -1,7 +1,8 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useLogs } from "../lib/useLogs";
 import nouticaLogo from "../assets/nouticaLogo.png";
+import CommandPalette, { type Command } from "./CommandPalette";
 
 
 export default function AppLayout() {
@@ -9,10 +10,13 @@ export default function AppLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const nav = useNavigate();
 
   const pageTitle = useMemo(() => {
     if (location.pathname === "/") return "Dashboard";
     if (location.pathname === "/new") return "New Log";
+    if (location.pathname === "/projects") return "Projects";
     if (location.pathname.endsWith("/edit")) return "Edit Log";
     if (location.pathname === "/urdf") return "URDF Viewer";
     if (location.pathname.startsWith("/logs/")) return "Log Detail";
@@ -36,6 +40,37 @@ export default function AppLayout() {
     document.body.dataset.theme = next;
     localStorage.setItem("noutica_theme", next);
   };
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTypingField =
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setPaletteOpen(true);
+      } else if (!isTypingField && event.key === "/") {
+        event.preventDefault();
+        setPaletteOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const commands = useMemo<Command[]>(
+    () => [
+      { id: "new-log", label: "New log", shortcut: "N", action: () => nav("/new") },
+      { id: "dashboard", label: "Go to dashboard", shortcut: "D", action: () => nav("/") },
+      { id: "projects", label: "Go to projects", shortcut: "P", action: () => nav("/projects") },
+      { id: "urdf", label: "Open URDF viewer", shortcut: "U", action: () => nav("/urdf") },
+      { id: "toggle-theme", label: `Switch to ${theme === "dark" ? "light" : "dark"} mode`, action: toggleTheme },
+    ],
+    [nav, theme, toggleTheme]
+  );
 
   return (
     <div className={`layout ${sidebarOpen ? "sidebar-open" : ""}`}>
@@ -77,6 +112,14 @@ export default function AppLayout() {
             onClick={() => setSidebarOpen(false)}
           >
             New Log
+          </NavLink>
+
+          <NavLink
+            to="/projects"
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+            onClick={() => setSidebarOpen(false)}
+          >
+            Projects
           </NavLink>
 
           <NavLink
@@ -142,6 +185,7 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={commands} />
     </div>
   );
 }
